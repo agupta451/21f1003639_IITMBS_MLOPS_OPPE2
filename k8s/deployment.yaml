@@ -1,0 +1,45 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heart-disease-predictor
+  labels:
+    app: heart-disease-predictor
+spec:
+  replicas: 1 # Start with 1, HPA will scale it
+  selector:
+    matchLabels:
+      app: heart-disease-predictor
+  template:
+    metadata:
+      labels:
+        app: heart-disease-predictor
+    spec:
+      # A service account with permissions to write to Cloud Logging and Trace
+      serviceAccountName: telemetry-access
+      containers:
+      - name: heart-disease-predictor
+        # Replace with your image path in Google Artifact Registry
+        image: us-central1-docker.pkg.dev/silicon-synapse-461513-v6/my-heart-disease-repo/heart-disease:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
